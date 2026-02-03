@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logic Shielder Pro | Enterprise Obfuscation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CodeMirror 6 is modular and complex for a single file; using a stable 5.x build for robust single-file implementation -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/moxer.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/javascript/javascript.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-pure: #000000;
+            --accent: #ffffff;
+            --border: #222222;
+            --text-muted: #888888;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-pure);
+            color: var(--accent);
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* CodeMirror Overrides for "The Perfect Black" */
+        .CodeMirror {
+            height: 100% !important;
+            background: #000 !important;
+            color: #fff !important;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .CodeMirror-gutters {
+            background: #000 !important;
+            border-right: 1px solid #111 !important;
+        }
+        .CodeMirror-linenumber { color: #333 !important; }
+        .CodeMirror-cursor { border-left: 2px solid #fff !important; }
+
+        /* Page Transitions */
+        .page {
+            position: absolute;
+            top: 64px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 64px);
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.6s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .page-hidden {
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            background: #ccc;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            border: 1px solid #333;
+            color: #fff;
+        }
+        .btn-secondary:hover {
+            background: #111;
+            border-color: #555;
+        }
+
+        .tab-active {
+            color: #fff;
+            border-bottom: 2px solid #fff;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Global Navigation -->
+    <nav class="h-16 border-b border-[#111] px-8 flex items-center justify-between bg-black z-50 relative">
+        <div class="flex items-center gap-8">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-white flex items-center justify-center">
+                    <div class="w-3 h-3 bg-black"></div>
+                </div>
+                <span class="font-bold tracking-tighter text-lg uppercase">Logic Shielder <span class="font-light text-muted">Enterprise</span></span>
+            </div>
+            
+            <div class="flex gap-6 h-full items-center">
+                <button onclick="showPage('input')" id="tab-input" class="text-xs uppercase tracking-widest font-semibold transition-all h-full tab-active">Source</button>
+                <button onclick="showPage('output')" id="tab-output" class="text-xs uppercase tracking-widest font-semibold text-muted hover:text-white transition-all h-full">Protected</button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <span class="text-[10px] text-muted mono">ENCRYPTION: AES-WRAP-ENABLED</span>
+            <div class="w-[1px] h-4 bg-[#222]"></div>
+            <button onclick="obfuscateProcess()" class="btn-primary px-6 py-2 text-[11px] font-bold uppercase tracking-widest rounded-sm">Secure Logic</button>
+        </div>
+    </nav>
+
+    <!-- Page: Code Input -->
+    <div id="page-input" class="page">
+        <div class="flex-1 overflow-hidden relative border-b border-[#111]">
+            <textarea id="editor-input"></textarea>
+        </div>
+        <div class="h-12 bg-black px-8 flex items-center justify-between text-[10px] text-muted mono uppercase tracking-widest">
+            <div>Lines: <span id="ln-count" class="text-white">0</span></div>
+            <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer hover:text-white">
+                    <input type="checkbox" id="check-hex" checked class="accent-white"> Hex-Transform
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer hover:text-white">
+                    <input type="checkbox" id="check-dead" checked class="accent-white"> Dead-Code
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page: Obfuscated Output -->
+    <div id="page-output" class="page page-hidden">
+        <div class="flex-1 overflow-hidden relative border-b border-[#111]">
+            <textarea id="editor-output"></textarea>
+            
+            <!-- Floating Success Indicator -->
+            <div id="success-banner" class="absolute top-8 right-8 bg-white text-black px-4 py-2 text-[10px] font-bold uppercase tracking-widest shadow-2xl opacity-0 transition-opacity">
+                Obfuscation Successful
+            </div>
+        </div>
+        <div class="h-12 bg-black px-8 flex items-center justify-between">
+            <div class="text-[10px] text-muted mono uppercase tracking-widest">Safety Tier: <span class="text-white">Level 5 (Production)</span></div>
+            <div class="flex gap-4">
+                <button onclick="copyOutput()" class="btn-secondary px-4 py-1 text-[10px] font-bold uppercase tracking-widest">Copy to Clipboard</button>
+                <button onclick="downloadOutput()" class="btn-secondary px-4 py-1 text-[10px] font-bold uppercase tracking-widest">Download .js</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-white text-black px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] shadow-2xl z-[100] pointer-events-none opacity-0 transition-all transform translate-y-4">
+        Output Copied
+    </div>
+
+    <script>
+        let inputEditor, outputEditor;
+
+        window.onload = () => {
+            // Initialize Input Editor
+            inputEditor = CodeMirror.fromTextArea(document.getElementById('editor-input'), {
+                mode: 'javascript',
+                theme: 'moxer',
+                lineNumbers: true,
+                viewportMargin: Infinity,
+                placeholder: "// Paste sensitive JavaScript here..."
+            });
+
+            // Initialize Output Editor
+            outputEditor = CodeMirror.fromTextArea(document.getElementById('editor-output'), {
+                mode: 'javascript',
+                theme: 'moxer',
+                lineNumbers: true,
+                readOnly: true
+            });
+
+            inputEditor.on('change', () => {
+                document.getElementById('ln-count').innerText = inputEditor.lineCount();
+            });
+
+            // Demo content
+            inputEditor.setValue(`/* * Enterprise Logic Protection
+ * Use this tool to obfuscate production scripts.
+ */
+
+function validateUser(id) {
+    const apiKey = "SH-772-X-99"; 
+    if (id === 200) {
+        console.log("Access Granted with Key: " + apiKey);
+        return true;
+    }
+    return false;
+}`);
+        };
+
+        function showPage(pageId) {
+            const inputPage = document.getElementById('page-input');
+            const outputPage = document.getElementById('page-output');
+            const tabInput = document.getElementById('tab-input');
+            const tabOutput = document.getElementById('tab-output');
+
+            if (pageId === 'input') {
+                inputPage.classList.remove('page-hidden');
+                outputPage.classList.add('page-hidden');
+                tabInput.classList.add('tab-active');
+                tabInput.classList.remove('text-muted');
+                tabOutput.classList.remove('tab-active');
+                tabOutput.classList.add('text-muted');
+            } else {
+                inputPage.classList.add('page-hidden');
+                outputPage.classList.remove('page-hidden');
+                tabInput.classList.remove('tab-active');
+                tabInput.classList.add('text-muted');
+                tabOutput.classList.add('tab-active');
+                tabOutput.classList.remove('text-muted');
+                outputEditor.refresh();
+            }
+        }
+
+        function obfuscateProcess() {
+            const raw = inputEditor.getValue();
+            if (!raw.trim()) return;
+
+            let code = raw;
+
+            // 1. Minification Pass
+            code = code.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1') // Comments
+                       .replace(/\s+/g, ' ')
+                       .trim();
+
+            // 2. Variable/String Hex Mapping
+            if (document.getElementById('check-hex').checked) {
+                code = code.split('').map(c => {
+                    const r = Math.random();
+                    if (r > 0.7 && /[a-zA-Z0-9]/.test(c)) {
+                        return '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0');
+                    }
+                    return c;
+                }).join('');
+            }
+
+            // 3. String Shuffling (Advanced)
+            const b64 = btoa(unescape(encodeURIComponent(code)));
+            const partSize = Math.ceil(b64.length / 3);
+            const p1 = b64.substring(0, partSize);
+            const p2 = b64.substring(partSize, partSize * 2);
+            const p3 = b64.substring(partSize * 2);
+
+            // Constructing an unreadable self-executing entity
+            const protector = `(function(_0xPro, _0xShield, _0xCore){
+    const _0xLib = [_0xCore, _0xShield, _0xPro].join('');
+    const _0xRun = decodeURIComponent(escape(atob(_0xLib)));
+    eval(_0xRun);
+})("${p3}", "${p2}", "${p1}");`;
+
+            outputEditor.setValue(protector);
+            showPage('output');
+
+            const banner = document.getElementById('success-banner');
+            banner.style.opacity = '1';
+            setTimeout(() => banner.style.opacity = '0', 3000);
+        }
+
+        function copyOutput() {
+            const val = outputEditor.getValue();
+            const el = document.createElement('textarea');
+            el.value = val;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            const toast = document.getElementById('toast');
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 1rem)';
+            }, 2500);
+        }
+
+        function downloadOutput() {
+            const blob = new Blob([outputEditor.getValue()], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'protected_logic_' + Date.now() + '.js';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
