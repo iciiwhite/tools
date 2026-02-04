@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus PHP | Professional IDE</title>
+    
+    <!-- Design System: Tailwind & Inter Font -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- IDE Logic: PHP Wasm & Ace Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
+    <script type="module">
+        import { PHP } from 'https://cdn.jsdelivr.net/npm/@php-wasm/web@0.0.9/+esm';
+        
+        const statusIndicator = document.getElementById('status-indicator');
+        const runBtn = document.getElementById('run-btn');
+
+        async function initPHP() {
+            try {
+                window.PHPInstance = await PHP.load('8.2');
+                
+                // Update UI to Ready State
+                statusIndicator.innerHTML = '<span class="flex h-2 w-2 relative"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span class="text-emerald-400">Engine Ready</span>';
+                runBtn.disabled = false;
+                runBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                runBtn.classList.add('hover:bg-emerald-600', 'hover:border-emerald-500');
+            } catch (e) {
+                console.error(e);
+                statusIndicator.innerHTML = `<span class="text-red-500">Engine Error</span>`;
+            }
+        }
+        
+        initPHP();
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 5px; border: 2px solid #0d1117; }
+        ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; overflow: hidden; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Layout */
+        .app-layout { display: flex; flex-direction: column; height: 100vh; }
+        .main-content { flex: 1; position: relative; overflow: hidden; }
+        
+        /* Screen Switching Logic */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+            background-color: #0d1117;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen.hidden-screen {
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+            transform: scale(0.98);
+        }
+
+        .screen.active-screen {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 10;
+            transform: scale(1);
+        }
+
+        /* Tab Active State */
+        .nav-tab.active {
+            background-color: #30363d;
+            color: white;
+            border-bottom: 2px solid #238636;
+        }
+    </style>
+</head>
+<body class="app-layout">
+
+    <!-- Navbar -->
+    <header class="border-b border-[#30363d] bg-[#010409] px-4 h-14 flex justify-between items-center shadow-sm z-50">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 w-48">
+            <div class="bg-gradient-to-br from-[#777ebb] to-[#4f58a3] w-8 h-8 rounded flex items-center justify-center shadow-lg shadow-indigo-900/20">
+                <i class="fa-brands fa-php text-white text-lg"></i>
+            </div>
+            <h1 class="font-semibold text-white tracking-tight leading-none hidden md:block">Nexus<span class="text-gray-500 font-light">PHP</span></h1>
+        </div>
+
+        <!-- Center Tabs (Screen Switcher) -->
+        <div class="flex bg-[#0d1117] border border-[#30363d] rounded-md p-1">
+            <button onclick="switchScreen('editor')" id="tab-editor" class="nav-tab active px-6 py-1.5 rounded text-xs font-medium text-gray-400 hover:text-white transition-all flex items-center gap-2">
+                <i class="fas fa-code"></i> Code
+            </button>
+            <button onclick="switchScreen('preview')" id="tab-preview" class="nav-tab px-6 py-1.5 rounded text-xs font-medium text-gray-400 hover:text-white transition-all flex items-center gap-2">
+                <i class="fas fa-globe"></i> Browser
+            </button>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-3 w-48 justify-end">
+            <div id="status-indicator" class="hidden md:flex items-center gap-2 text-[10px] font-mono border border-[#30363d] bg-[#0d1117] px-2 py-1 rounded text-gray-500">
+                <i class="fas fa-circle-notch fa-spin"></i> Load...
+            </div>
+
+            <button id="run-btn" disabled onclick="runCode()" class="group flex items-center gap-2 bg-[#238636] hover:bg-[#2ea043] text-white px-4 py-1.5 rounded-md text-xs font-bold transition-all shadow-md opacity-50 cursor-not-allowed">
+                <i id="run-icon" class="fas fa-play text-[10px]"></i>
+                <span id="run-text">RUN</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-content relative">
+        
+        <!-- SCREEN 1: EDITOR -->
+        <div id="screen-editor" class="screen active-screen">
+            <!-- File Info Bar -->
+            <div class="flex justify-between items-center px-4 py-2 bg-[#0d1117] border-b border-[#30363d] text-xs">
+                <div class="flex items-center gap-2 text-gray-400">
+                    <i class="fa-regular fa-file-code text-blue-400"></i>
+                    <span>index.php</span>
+                </div>
+                <span class="text-gray-600">UTF-8</span>
+            </div>
+            <!-- Ace Editor -->
+            <div id="editor" class="flex-1 text-base"></div>
+        </div>
+
+        <!-- SCREEN 2: BROWSER PREVIEW -->
+        <div id="screen-preview" class="screen hidden-screen bg-white">
+            <!-- Fake Browser Bar -->
+            <div class="flex items-center px-4 py-2 bg-[#f0f0f0] border-b border-[#e0e0e0] gap-3">
+                <div class="flex gap-1.5">
+                    <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                </div>
+                <div class="flex-1 bg-white border border-[#d0d0d0] rounded-md px-3 py-1 text-xs text-gray-500 font-mono flex items-center gap-2">
+                    <i class="fas fa-lock text-gray-300"></i>
+                    <span>localhost:8080/index.php</span>
+                </div>
+                <button onclick="runCode()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-rotate-right"></i></button>
+            </div>
+            
+            <!-- Iframe for HTML Rendering -->
+            <iframe id="preview-frame" class="flex-1 w-full border-none bg-white"></iframe>
+            
+            <!-- Console Log Overlay (Optional/Debug) -->
+            <div id="debug-log" class="hidden absolute bottom-0 w-full max-h-32 bg-black/90 text-white p-2 font-mono text-xs overflow-auto border-t border-gray-700"></div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#010409] border-t border-[#30363d] p-1 px-4 flex justify-between items-center text-[10px] text-gray-500 font-mono select-none h-8">
+        <div class="flex gap-4">
+            <span class="hover:text-gray-300 cursor-pointer"><i class="fas fa-code-branch mr-1"></i>main</span>
+        </div>
+        <div class="flex gap-4">
+            <span>PHP 8.2 (Wasm)</span>
+            <span id="exec-time">0ms</span>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. Screen Switching Logic ---
+        function switchScreen(screenName) {
+            const editorScreen = document.getElementById('screen-editor');
+            const previewScreen = document.getElementById('screen-preview');
+            const tabEditor = document.getElementById('tab-editor');
+            const tabPreview = document.getElementById('tab-preview');
+
+            if (screenName === 'editor') {
+                editorScreen.classList.remove('hidden-screen');
+                editorScreen.classList.add('active-screen');
+                previewScreen.classList.add('hidden-screen');
+                previewScreen.classList.remove('active-screen');
+                
+                tabEditor.classList.add('active');
+                tabPreview.classList.remove('active');
+            } else {
+                previewScreen.classList.remove('hidden-screen');
+                previewScreen.classList.add('active-screen');
+                editorScreen.classList.add('hidden-screen');
+                editorScreen.classList.remove('active-screen');
+                
+                tabEditor.classList.remove('active');
+                tabPreview.classList.add('active');
+            }
+        }
+
+        // --- 2. Initialize Ace Editor ---
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/one_dark");
+        editor.session.setMode("ace/mode/php");
+        editor.setOptions({
+            fontFamily: "JetBrains Mono",
+            fontSize: "14px",
+            showPrintMargin: false,
+            showGutter: true,
+            highlightActiveLine: true,
+            wrap: true,
+            tabSize: 4
+        });
+
+        const defaultCode = `<?php
+// Defines styles for the web page
+$style = "
+    body { font-family: sans-serif; text-align: center; padding: 50px; background: #f9fafb; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: inline-block; }
+    h1 { color: #4f46e5; margin-bottom: 10px; }
+    .tag { background: #e0e7ff; color: #4338ca; padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: bold; }
+";
+
+$title = "Welcome to Nexus PHP";
+$message = "This page was rendered entirely in your browser using WebAssembly.";
+$tags = ["PHP 8.2", "Client-Side", "Fast"];
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <style><?= $style ?></style>
+</head>
+<body>
+    <div class="card">
+        <span class="tag">DEMO</span>
+        <h1><?= $title ?></h1>
+        <p><?= $message ?></p>
+        
+        <div style="margin-top: 20px;">
+            <?php foreach($tags as $tag): ?>
+                <span class="tag" style="background: #dcfce7; color: #166534; margin: 2px;">
+                    #<?= $tag ?>
+                </span>
+            <?php endforeach; ?>
+        </div>
+        
+        <p style="margin-top: 30px; font-size: 0.8rem; color: #888;">
+            Server Time: <?= date('Y-m-d H:i:s') ?>
+        </p>
+    </div>
+</body>
+</html>`;
+        editor.setValue(defaultCode, -1);
+
+        // --- 3. Execution Logic ---
+        async function runCode() {
+            if (!window.PHPInstance) return;
+
+            const code = editor.getValue();
+            const runBtn = document.getElementById('run-btn');
+            const runText = document.getElementById('run-text');
+            const runIcon = document.getElementById('run-icon');
+            const execTimeDisplay = document.getElementById('exec-time');
+            const iframe = document.getElementById('preview-frame');
+
+            // UI Loading State
+            runBtn.disabled = true;
+            runText.innerText = "Processing...";
+            runIcon.classList.remove('fa-play');
+            runIcon.classList.add('fa-circle-notch', 'fa-spin');
+
+            const startTime = performance.now();
+
+            try {
+                // Execute PHP
+                const result = await window.PHPInstance.run(code);
+                
+                // Switch to Preview Tab to show results
+                switchScreen('preview');
+
+                // Determine content to show in Iframe
+                let content = "";
+                
+                if (result.stderr) {
+                    // Show Error in a nice HTML error box
+                    content = `
+                        <div style="font-family: monospace; background: #fee2e2; color: #991b1b; padding: 20px; border-left: 4px solid #ef4444;">
+                            <h3 style="margin-top:0">PHP Error</h3>
+                            <pre style="white-space: pre-wrap;">${result.stderr}</pre>
+                        </div>
+                    `;
+                    // If there was partial stdout (e.g. half a page rendered before crash), append it
+                    if (result.stdout) content += `<hr>${result.stdout}`;
+                } else {
+                    content = result.stdout;
+                }
+
+                // Inject into Iframe
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(content);
+                doc.close();
+
+            } catch (error) {
+                const doc = iframe.contentWindow.document;
+                doc.body.innerHTML = `<h1 style="color:red">Fatal Error</h1><p>${error.message}</p>`;
+            } finally {
+                // UI Reset
+                const endTime = performance.now();
+                execTimeDisplay.innerText = `${(endTime - startTime).toFixed(2)}ms`;
+                
+                runBtn.disabled = false;
+                runText.innerText = "RUN";
+                runIcon.classList.add('fa-play');
+                runIcon.classList.remove('fa-circle-notch', 'fa-spin');
+            }
+        }
+
+        // Keyboard Shortcut: Ctrl + Enter to Run
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+    </script>
+</body>
+</html>
