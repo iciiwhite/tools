@@ -19,13 +19,16 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-deep);
             color: white;
-            overflow: auto;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 3rem;
+            margin: 0;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
 
         .blob-container {
@@ -36,6 +39,7 @@
             z-index: 1;
             pointer-events: none;
             flex-shrink: 0;
+            transition: all 0.3s ease;
         }
 
         .blob {
@@ -65,11 +69,13 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 2.5rem;
             border-radius: 40px;
-            width: 480px;
-            max-height: 70vh;
+            width: 100%;
+            max-width: 480px;
+            max-height: 80vh;
             display: flex;
             flex-direction: column;
             box-shadow: 0 40px 80px -12px rgba(0, 0, 0, 0.8);
+            transition: padding 0.3s ease;
         }
 
         .palette-container {
@@ -160,6 +166,7 @@
             font-size: 0.7rem;
             text-transform: uppercase;
             width: 40px;
+            flex-shrink: 0;
         }
         .code-value {
             color: rgba(255,255,255,0.9);
@@ -167,6 +174,9 @@
             text-align: right;
             margin-right: 1rem;
             letter-spacing: 0.05em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .copy-btn {
             background: transparent;
@@ -175,9 +185,34 @@
             cursor: pointer;
             transition: color 0.2s;
             padding: 4px;
+            flex-shrink: 0;
         }
         .copy-btn:hover {
             color: white;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                gap: 2rem;
+            }
+            .ui-panel {
+                padding: 1.5rem;
+                border-radius: 30px;
+            }
+            .blob-container {
+                width: 120px;
+                height: 120px;
+            }
+            .palette-grid {
+                gap: 4px;
+            }
+            .code-row {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
@@ -190,7 +225,7 @@
     <div class="ui-panel">
         <div class="flex justify-between items-end mb-4">
             <div>
-                <h1 class="text-3xl font-black tracking-tighter">Zenith</h1>
+                <h1 class="text-3xl font-black tracking-tighter md:text-3xl text-2xl">Zenith</h1>
                 <p class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">Signature Color Suite</p>
             </div>
             <div id="previewDot" class="w-8 h-8 rounded-full border border-white/20 shadow-lg"></div>
@@ -301,12 +336,17 @@
 
         function copyToClipboard(elementId) {
             const text = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById(elementId).nextElementSibling;
-                const originalIcon = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check text-green-400"></i>';
-                setTimeout(() => btn.innerHTML = originalIcon, 1500);
-            });
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            const btn = document.getElementById(elementId).nextElementSibling;
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check text-green-400"></i>';
+            setTimeout(() => btn.innerHTML = originalIcon, 1500);
         }
 
         function alphaToHex(alpha) {
