@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaGrabber Pro | Icii Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 70%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -5px rgba(220, 39, 67, 0.4);
+        }
+
+        .input-glow:focus-within {
+            box-shadow: 0 0 0 2px rgba(220, 39, 67, 0.3);
+            border-color: rgba(220, 39, 67, 0.5);
+        }
+
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #dc2743;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4 selection:bg-pink-500 selection:text-white">
+
+    <nav class="absolute top-0 w-full max-w-6xl p-6 flex justify-between items-center z-10">
+        <div class="flex items-center gap-2">
+            <i class="fa-brands fa-instagram text-2xl text-pink-500"></i>
+            <span class="brand-font font-bold text-xl tracking-wide">InstaGrabber<span class="text-pink-500">Pro</span></span>
+        </div>
+        <div class="hidden md:flex gap-6 text-sm text-gray-400 font-medium">
+            <span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded border border-green-500/30">SECURE BYPASS ENABLED</span>
+        </div>
+    </nav>
+
+    <main class="w-full max-w-xl relative z-0 mt-16 md:mt-0">
+        
+        <div class="text-center mb-10">
+            <h1 class="brand-font text-5xl md:text-6xl font-bold mb-4 tracking-tight">
+                Save the <br> <span class="text-gradient">Moments.</span>
+            </h1>
+            <p class="text-gray-400 text-lg max-w-sm mx-auto leading-relaxed">
+                Download Instagram content instantly. <br> No login required.
+            </p>
+        </div>
+
+        <div class="glass-panel rounded-3xl p-2 md:p-3 relative overflow-hidden">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-gradient-to-r from-transparent via-pink-500 to-transparent opacity-50 blur-sm"></div>
+
+            <div class="bg-black/40 rounded-2xl p-6 md:p-8 border border-white/5">
+                
+                <div class="relative group input-glow rounded-xl transition-all duration-300 border border-white/10 bg-white/5">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-link text-gray-500 group-focus-within:text-pink-500 transition-colors"></i>
+                    </div>
+                    <input type="text" 
+                           id="urlInput"
+                           placeholder="Paste Instagram link here..." 
+                           class="w-full pl-11 pr-24 py-4 bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 text-base md:text-lg rounded-xl"
+                           autocomplete="off">
+                    
+                    <div class="absolute inset-y-0 right-2 flex items-center">
+                        <button onclick="pasteFromClipboard()" class="text-xs bg-white/10 hover:bg-white/20 text-gray-300 px-3 py-1.5 rounded-lg transition-colors font-medium">
+                            PASTE
+                        </button>
+                    </div>
+                </div>
+
+                <button id="downloadBtn" onclick="processLink()" class="btn-gradient w-full mt-4 py-4 rounded-xl font-bold text-lg tracking-wide shadow-lg shadow-pink-900/20 flex items-center justify-center gap-2 group">
+                    <span>Analyze URL</span>
+                    <i class="fa-solid fa-bolt group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                <div id="errorMsg" class="hidden mt-4 text-red-400 text-sm text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20 flex items-center justify-center gap-2 animate-slide-up">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="errorText">URL Error</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="resultSection" class="hidden mt-6 glass-panel rounded-2xl p-4 animate-slide-up">
+            <div class="flex gap-4">
+                <div class="w-24 h-24 md:w-32 md:h-32 bg-gray-800 rounded-xl overflow-hidden relative shrink-0">
+                    <img src="" id="thumbnail" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <i class="fa-solid fa-video text-white text-2xl drop-shadow-md"></i>
+                    </div>
+                </div>
+
+                <div class="flex flex-col justify-between flex-1 py-1">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-pink-500/20 text-pink-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase border border-pink-500/30">Detected</span>
+                            <span class="text-gray-400 text-xs">Media Extracted</span>
+                        </div>
+                        <h3 class="text-sm md:text-base font-medium text-white line-clamp-2" id="videoTitle">Media Ready</h3>
+                    </div>
+
+                    <div class="flex flex-col gap-2 mt-2">
+                        <button id="mainDownloadBtn" onclick="triggerDownload()" class="w-full bg-white text-black hover:bg-gray-200 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i> Download Video
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center">
+            <p class="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Icii White Security Shield Active</p>
+        </div>
+
+    </main>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resultSection = document.getElementById('resultSection');
+        const errorMsg = document.getElementById('errorMsg');
+        const errorText = document.getElementById('errorText');
+        const thumbnail = document.getElementById('thumbnail');
+        let activeDownloadUrl = "";
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                urlInput.value = text;
+                hideError();
+            } catch (err) {
+                alert('Please long-press and paste.');
+            }
+        }
+
+        async function processLink() {
+            const url = urlInput.value.trim();
+            if (!url.includes('instagram.com/')) {
+                showError('Valid Instagram link required.');
+                return;
+            }
+
+            hideError();
+            resultSection.classList.add('hidden');
+            downloadBtn.innerHTML = '<div class="loader"></div>';
+            downloadBtn.disabled = true;
+
+            try {
+                // Using a more reliable scraping gateway for Instagram
+                const data = await fetchInstaMedia(url);
+                
+                if (data && data.url) {
+                    activeDownloadUrl = data.url;
+                    thumbnail.src = data.thumb || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=300&fit=crop";
+                    resultSection.classList.remove('hidden');
+                } else {
+                    throw new Error("Private content or invalid link.");
+                }
+
+            } catch (err) {
+                showError(err.message || "Failed to fetch. Try again.");
+            } finally {
+                downloadBtn.innerHTML = '<span>Analyze URL</span> <i class="fa-solid fa-bolt"></i>';
+                downloadBtn.disabled = false;
+            }
+        }
+
+        async function fetchInstaMedia(url) {
+            // Updated Scraper: Uses a different public gateway better suited for web-hosted environments
+            const cleanUrl = url.split('?')[0];
+            const gateway = `https://api.allorigins.win/get?url=${encodeURIComponent(cleanUrl)}`;
+
+            const response = await fetch(gateway);
+            if (!response.ok) throw new Error("Connection failed.");
+            
+            const rawData = await response.json();
+            const html = rawData.contents;
+
+            // Advanced Scraper Logic: Finding the hidden CDN links in Instagram's source
+            let videoUrl = "";
+            let thumb = "";
+
+            // Strategy A: OpenGraph Tags
+            const ogVideo = html.match(/property="og:video" content="([^"]+)"/);
+            const ogImage = html.match(/property="og:image" content="([^"]+)"/);
+
+            if (ogVideo) videoUrl = ogVideo[1].replaceAll('&amp;', '&');
+            if (ogImage) thumb = ogImage[1].replaceAll('&amp;', '&');
+
+            // Strategy B: JSON data structure search if Meta tags fail
+            if (!videoUrl) {
+                const videoMatch = html.match(/"video_url":"([^"]+)"/);
+                if (videoMatch) videoUrl = videoMatch[1].replace(/\\u0026/g, '&');
+            }
+
+            return { url: videoUrl, thumb: thumb };
+        }
+
+        function triggerDownload() {
+            if (!activeDownloadUrl) return;
+            
+            // For cross-origin files, we open in new tab to let user save
+            const link = document.createElement('a');
+            link.href = activeDownloadUrl;
+            link.target = "_blank";
+            link.setAttribute('download', 'instagram_video.mp4');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function showError(msg) {
+            errorText.innerText = msg;
+            errorMsg.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMsg.classList.add('hidden');
+        }
+
+        urlInput.addEventListener('input', hideError);
+    </script>
+</body>
+</html>
