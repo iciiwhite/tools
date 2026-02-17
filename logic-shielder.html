@@ -1,246 +1,518 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logic Shielder Pro | Enterprise Obfuscation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IciiObfuscate | Professional JS Security</title>
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IciiObfuscate">
+    
+    <!-- Dynamic Manifest for PWA Install -->
+    <link rel="manifest" id="manifest-placeholder">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/theme/moxer.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/javascript/javascript.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- JavaScript Obfuscator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/javascript-obfuscator/dist/index.browser.js"></script>
+
+    <!-- SweetAlert2 for beautiful alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        glass: {
+                            100: 'rgba(255, 255, 255, 0.05)',
+                            200: 'rgba(255, 255, 255, 0.1)',
+                            300: 'rgba(255, 255, 255, 0.15)',
+                            border: 'rgba(255, 255, 255, 0.08)',
+                        },
+                        accent: {
+                            purple: '#8b5cf6',
+                            blue: '#3b82f6',
+                            cyan: '#06b6d4'
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        :root {
-            --bg-pure: #000000;
-            --accent: #ffffff;
-            --border: #111111;
-            --text-muted: #666666;
-        }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-pure);
-            color: var(--accent);
-            margin: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            background-color: #050505;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #222; }
-        ::-webkit-scrollbar-thumb:hover { background: #444; }
-        .CodeMirror {
-            height: 100% !important;
-            background: #000 !important;
-            color: #fff !important;
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e5e5;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(139, 92, 246, 0.5);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+
+        .glass-btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+        }
+
+        .glass-btn:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .glass-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444; 
+        }
+
+        /* Editor Styles */
+        .code-editor {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.5;
+            tab-size: 4;
         }
-        @media (max-width: 640px) {
-            .CodeMirror { font-size: 11px; padding: 10px; }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
         }
-        .CodeMirror-gutters {
-            background: #000 !important;
-            border-right: 1px solid #111 !important;
-        }
-        .CodeMirror-linenumber { color: #222 !important; }
-        .CodeMirror-cursor { border-left: 2px solid #fff !important; }
-        .page {
-            flex: 1;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            background: #000;
-        }
+
+        /* Page Transition classes */
         .page-hidden {
-            position: absolute;
+            display: none;
             opacity: 0;
-            transform: translateY(10px);
             pointer-events: none;
-            width: 100%;
         }
-        .tab-active {
-            color: #fff;
-            position: relative;
-        }
-        .tab-active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: #fff;
-        }
-        @media (max-width: 768px) {
-            .nav-hide-mobile { display: none; }
-            .nav-content { padding: 0 1rem; }
-            .footer-content { padding: 0 1rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+        
+        .page-visible {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
         }
     </style>
 </head>
-<body class="antialiased">
-    <nav class="h-14 md:h-16 border-b border-[#111] px-4 md:px-8 flex items-center justify-between bg-black z-50 shrink-0">
-        <div class="flex items-center gap-4 md:gap-8 h-full">
-            <div class="flex items-center gap-2">
-                <div class="w-5 h-5 bg-white flex items-center justify-center">
-                    <div class="w-2 h-2 bg-black"></div>
-                </div>
-                <span class="font-bold tracking-tighter text-sm md:text-base uppercase">Logic Shielder</span>
-            </div>
-            <div class="flex gap-4 md:gap-6 h-full items-center">
-                <button onclick="showPage('input')" id="tab-input" class="text-[10px] uppercase tracking-widest font-semibold transition-all h-full tab-active">Source</button>
-                <button onclick="showPage('output')" id="tab-output" class="text-[10px] uppercase tracking-widest font-semibold text-[#666] hover:text-white transition-all h-full">Protected</button>
-            </div>
-        </div>
-        <div class="flex items-center gap-3 md:gap-4">
-            <span class="text-[9px] text-[#444] mono hidden sm:block">AES_V2.5_ACTIVE</span>
-            <button onclick="obfuscateProcess()" class="bg-white text-black px-4 md:px-6 py-1.5 md:py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-[#ccc] transition-all transform active:scale-95">Secure</button>
-        </div>
-    </nav>
-    <main class="relative flex-1 flex flex-col overflow-hidden">
-        <div id="page-input" class="page">
-            <div class="flex-1 overflow-hidden relative border-b border-[#111]">
-                <textarea id="editor-input"></textarea>
-            </div>
-            <div class="h-10 bg-black px-4 md:px-8 flex items-center justify-between text-[9px] text-[#555] mono uppercase tracking-widest shrink-0">
-                <div>Lines: <span id="ln-count" class="text-white">0</span></div>
-                <div class="flex gap-4">
-                    <label class="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors">
-                        <input type="checkbox" id="check-hex" checked class="accent-white w-3 h-3"> <span class="hidden sm:inline">Hex-Transform</span><span class="sm:hidden">HEX</span>
-                    </label>
-                    <label class="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors">
-                        <input type="checkbox" id="check-dead" checked class="accent-white w-3 h-3"> <span class="hidden sm:inline">Dead-Code</span><span class="sm:hidden">DEAD</span>
-                    </label>
-                </div>
-            </div>
-        </div>
-        <div id="page-output" class="page page-hidden">
-            <div class="flex-1 overflow-hidden relative border-b border-[#111]">
-                <textarea id="editor-output"></textarea>
-                <div id="success-banner" class="absolute top-4 md:top-8 right-4 md:right-8 bg-white text-black px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest shadow-2xl opacity-0 transition-opacity z-10">
-                    Process Complete
-                </div>
-            </div>
-            <div class="h-10 bg-black px-4 md:px-8 flex items-center justify-between shrink-0">
-                <div class="text-[9px] text-[#555] mono uppercase tracking-widest hidden sm:block">Protection: <span class="text-white">Enterprise Tier</span></div>
-                <div class="flex gap-2 w-full sm:w-auto justify-end">
-                    <button onclick="copyOutput()" class="border border-[#222] text-white px-3 py-1 text-[9px] font-bold uppercase tracking-widest hover:bg-[#111] transition-all">Copy</button>
-                    <button onclick="downloadOutput()" class="border border-[#222] text-white px-3 py-1 text-[9px] font-bold uppercase tracking-widest hover:bg-[#111] transition-all">Download</button>
-                </div>
-            </div>
-        </div>
-    </main>
-    <footer class="h-12 md:h-14 border-t border-[#111] px-4 md:px-8 flex items-center justify-between bg-black shrink-0 footer-content">
-        <div class="text-[9px] md:text-[10px] text-[#444] tracking-[0.2em] font-medium uppercase">
-            &copy; 2026 <span class="text-white">BEDUSEC Security Systems</span>
-        </div>
-        <div class="flex items-center gap-4 md:gap-6 text-[9px] text-[#444] font-bold uppercase tracking-widest">
-            <span class="hidden md:inline">Latency: <span class="text-green-800">0.02ms</span></span>
-            <div class="hidden md:block w-[1px] h-3 bg-[#111]"></div>
-            <a href="#" class="hover:text-white transition-colors">Documentation</a>
-            <a href="#" class="hover:text-white transition-colors">Protocol V2</a>
-        </div>
-    </footer>
-    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] shadow-2xl z-[100] pointer-events-none opacity-0 transition-all transform translate-y-2">
-        Data Buffered
+<body class="text-gray-300 min-h-screen flex flex-col selection:bg-accent-purple selection:text-white relative">
+
+    <!-- Background Ambience -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-accent-purple rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
+        <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-accent-blue rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-accent-cyan rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-4000"></div>
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20"></div>
     </div>
+
+    <!-- Header -->
+    <header class="relative z-50 w-full px-6 py-4 flex justify-between items-center border-b border-glass-border glass-panel rounded-none">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-purple to-accent-blue flex items-center justify-center shadow-lg shadow-accent-purple/20">
+                <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight glow-text">Icii<span class="text-accent-purple">Obfuscate</span></h1>
+                <p class="text-xs text-gray-500 font-mono tracking-wider">SECURE ENGINE V2.0</p>
+            </div>
+        </div>
+        
+        <button id="installBtn" class="hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-sm font-medium text-white group">
+            <i class="fa-solid fa-download group-hover:animate-bounce"></i>
+            <span>Install App</span>
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex-1 flex flex-col w-full max-w-7xl mx-auto p-4 md:p-6 lg:p-8 h-full">
+
+        <!-- PAGE 1: EDITOR (Input) -->
+        <div id="page-editor" class="page-visible flex-col flex-1 h-full animate-fade-in">
+            
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h2 class="text-2xl font-semibold text-white">Source Code</h2>
+                    <p class="text-sm text-gray-400">Paste your JavaScript logic below to secure it.</p>
+                </div>
+                <div class="hidden md:flex gap-2">
+                    <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs border border-green-500/20 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check text-[8px]"></i> JS Engine Ready
+                    </span>
+                    <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs border border-blue-500/20 flex items-center gap-1">
+                        <i class="fa-solid fa-bolt text-[8px]"></i> Zero-Delay
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex-1 relative group">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-accent-purple to-accent-blue rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
+                <div class="relative h-full flex flex-col">
+                    <textarea 
+                        id="inputCode" 
+                        class="w-full h-[60vh] md:h-full p-6 rounded-2xl glass-input code-editor resize-none text-sm md:text-base placeholder-gray-600 focus:placeholder-gray-500/50"
+                        spellcheck="false"
+                        placeholder="// Paste your JavaScript code here...&#10;function initSystem() {&#10;    console.log('System ready');&#10;}"
+                    ></textarea>
+                    
+                    <!-- Floating Action Button -->
+                    <div class="absolute bottom-6 right-6 z-20">
+                        <button onclick="processCode()" class="group relative px-8 py-4 bg-white text-black font-bold rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                            <span class="flex items-center gap-3 relative z-10">
+                                <i class="fa-solid fa-lock text-accent-purple group-hover:text-black transition-colors"></i>
+                                OBFUSCATE
+                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Toggles (Visual Only for MVP, defaults applied) -->
+            <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
+                    <div class="w-4 h-4 rounded-full bg-accent-purple shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
+                    <span class="text-xs font-mono">Rename Vars</span>
+                </div>
+                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
+                    <div class="w-4 h-4 rounded-full bg-accent-blue shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                    <span class="text-xs font-mono">String Encrypt</span>
+                </div>
+                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
+                    <div class="w-4 h-4 rounded-full bg-accent-cyan shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
+                    <span class="text-xs font-mono">Dead Code</span>
+                </div>
+                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
+                    <div class="w-4 h-4 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]"></div>
+                    <span class="text-xs font-mono">Compact</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: RESULT (Output) -->
+        <div id="page-output" class="page-hidden flex-col flex-1 h-full">
+            
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="togglePage('editor')" class="px-4 py-2 rounded-lg glass-btn text-sm flex items-center gap-2 text-gray-300 hover:text-white">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Editor
+                </button>
+                <div class="flex items-center gap-2">
+                     <span class="text-xs text-green-400 font-mono animate-pulse">● Obfuscation Complete</span>
+                </div>
+            </div>
+
+            <div class="flex-1 relative group animate-slide-up">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-20"></div>
+                <div class="relative h-full flex flex-col">
+                    <!-- Readonly Overlay -->
+                    <div class="absolute top-4 right-4 z-10">
+                        <span class="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] uppercase font-bold tracking-wider">
+                            <i class="fa-solid fa-lock"></i> Read Only
+                        </span>
+                    </div>
+
+                    <textarea 
+                        id="outputCode" 
+                        class="w-full h-[60vh] md:h-full p-6 rounded-2xl glass-input code-editor resize-none text-gray-400 focus:text-gray-300 selection:bg-green-500/30"
+                        readonly
+                        placeholder="Obfuscated code will appear here..."
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="mt-6 flex flex-col md:flex-row gap-4">
+                <button onclick="copyOutput()" class="flex-1 py-4 rounded-xl glass-btn flex items-center justify-center gap-3 text-white font-medium group">
+                    <i class="fa-regular fa-copy group-hover:scale-110 transition-transform text-accent-cyan"></i>
+                    Copy to Clipboard
+                </button>
+                <button onclick="downloadOutput()" class="flex-1 py-4 rounded-xl glass-btn flex items-center justify-center gap-3 text-white font-medium group bg-white/5 hover:bg-white/10">
+                    <i class="fa-solid fa-download group-hover:scale-110 transition-transform text-accent-purple"></i>
+                    Download .js File
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 text-center py-6 text-xs text-gray-600 border-t border-glass-border glass-panel rounded-none">
+        <p>© 2026 IciiObfuscate. Secure. Logical. Professional.</p>
+    </footer>
+
+    <!-- LOGIC SCRIPT -->
     <script>
-        let inputEditor, outputEditor;
-        window.onload = () => {
-            inputEditor = CodeMirror.fromTextArea(document.getElementById('editor-input'), {
-                mode: 'javascript',
-                theme: 'moxer',
-                lineNumbers: true,
-                lineWrapping: true,
-                viewportMargin: Infinity
-            });
-            outputEditor = CodeMirror.fromTextArea(document.getElementById('editor-output'), {
-                mode: 'javascript',
-                theme: 'moxer',
-                lineNumbers: true,
-                lineWrapping: true,
-                readOnly: true
-            });
-            inputEditor.on('change', () => {
-                document.getElementById('ln-count').innerText = inputEditor.lineCount();
-            });
-            inputEditor.setValue(`function secureAsset(token) {
-    const authHeader = "X-SECURE-AUTH-2026";
-    if (token.length > 32) {
-        return btoa(authHeader + ":" + token);
-    }
-    return null;
-}`);
-            window.addEventListener('resize', () => {
-                inputEditor.refresh();
-                outputEditor.refresh();
-            });
+        // --- PWA MANIFEST INJECTION ---
+        // We inject the manifest dynamically because we are restricted to one file.
+        const manifest = {
+            "name": "IciiObfuscate",
+            "short_name": "IciiObf",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#000000",
+            "theme_color": "#000000",
+            "icons": [
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/2092/2092663.png", 
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/2092/2092663.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
         };
-        function showPage(pageId) {
-            const inputPage = document.getElementById('page-input');
-            const outputPage = document.getElementById('page-output');
-            const tabInput = document.getElementById('tab-input');
-            const tabOutput = document.getElementById('tab-output');
-            if (pageId === 'input') {
-                inputPage.classList.remove('page-hidden');
-                outputPage.classList.add('page-hidden');
-                tabInput.className = 'text-[10px] uppercase tracking-widest font-semibold transition-all h-full tab-active';
-                tabOutput.className = 'text-[10px] uppercase tracking-widest font-semibold text-[#666] hover:text-white transition-all h-full';
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        document.querySelector('#manifest-placeholder').setAttribute('href', manifestURL);
+
+        // --- PWA INSTALLATION LOGIC ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        });
+
+        // --- NAVIGATION LOGIC ---
+        function togglePage(page) {
+            const editor = document.getElementById('page-editor');
+            const output = document.getElementById('page-output');
+
+            if (page === 'output') {
+                editor.classList.remove('page-visible', 'animate-fade-in');
+                editor.classList.add('page-hidden');
+                
+                output.classList.remove('page-hidden');
+                output.classList.add('page-visible');
             } else {
-                inputPage.classList.add('page-hidden');
-                outputPage.classList.remove('page-hidden');
-                tabInput.className = 'text-[10px] uppercase tracking-widest font-semibold text-[#666] hover:text-white transition-all h-full';
-                tabOutput.className = 'text-[10px] uppercase tracking-widest font-semibold transition-all h-full tab-active';
-                setTimeout(() => outputEditor.refresh(), 50);
+                output.classList.remove('page-visible');
+                output.classList.add('page-hidden');
+                
+                editor.classList.remove('page-hidden');
+                editor.classList.add('page-visible', 'animate-fade-in');
             }
         }
-        function obfuscateProcess() {
-            const raw = inputEditor.getValue();
-            if (!raw.trim()) return;
-            let code = raw;
-            code = code.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1').replace(/\s+/g, ' ').trim();
-            if (document.getElementById('check-hex').checked) {
-                code = code.split('').map(c => Math.random() > 0.8 ? '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0') : c).join('');
+
+        // --- OBFUSCATION ENGINE ---
+        function processCode() {
+            const input = document.getElementById('inputCode').value;
+            
+            if (!input.trim()) {
+                Swal.fire({
+                    title: 'Empty Input',
+                    text: 'Please paste some JavaScript code first.',
+                    icon: 'warning',
+                    background: 'rgba(10, 10, 10, 0.95)',
+                    color: '#fff',
+                    confirmButtonColor: '#8b5cf6'
+                });
+                return;
             }
-            const b64 = btoa(unescape(encodeURIComponent(code)));
-            const split = Math.ceil(b64.length / 3);
-            const s1 = b64.slice(0, split), s2 = b64.slice(split, split*2), s3 = b64.slice(split*2);
-            const result = `(function(_0xBEDU, _0xSEC){const _0xSYS = _0xSEC.join("");eval(decodeURIComponent(escape(atob(_0xSYS))))})("${s3}", ["${s1}","${s2}","${s3}"]);`;
-            outputEditor.setValue(result);
-            showPage('output');
-            const banner = document.getElementById('success-banner');
-            banner.style.opacity = '1';
-            setTimeout(() => banner.style.opacity = '0', 2500);
-        }
-        function copyOutput() {
-            const val = outputEditor.getValue();
-            const el = document.createElement('textarea');
-            el.value = val;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            const toast = document.getElementById('toast');
-            toast.style.opacity = '1';
-            toast.style.transform = 'translate(-50%, 0)';
+
+            // Show loading state
+            Swal.fire({
+                title: 'Obfuscating...',
+                text: 'Applying cryptographic transformations',
+                background: 'rgba(10, 10, 10, 0.95)',
+                color: '#fff',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Use timeout to allow UI to update before heavy processing
             setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, 10px)';
-            }, 2000);
+                try {
+                    // Check if library loaded
+                    if (typeof JavaScriptObfuscator === 'undefined') {
+                        throw new Error("Obfuscation engine failed to load. Check internet connection.");
+                    }
+
+                    // Configuration for "High" Obfuscation
+                    const obfuscationResult = JavaScriptObfuscator.obfuscate(input, {
+                        compact: true,
+                        controlFlowFlattening: true,
+                        controlFlowFlatteningThreshold: 0.75,
+                        deadCodeInjection: true,
+                        deadCodeInjectionThreshold: 0.4,
+                        debugProtection: false,
+                        debugProtectionInterval: false,
+                        disableConsoleOutput: true,
+                        identifierNamesGenerator: 'hexadecimal',
+                        log: false,
+                        numbersToExpressions: true,
+                        renameGlobals: false,
+                        selfDefending: true,
+                        simplify: true,
+                        splitStrings: true,
+                        splitStringsChunkLength: 10,
+                        stringArray: true,
+                        stringArrayCallsTransform: true,
+                        stringArrayEncoding: ['rc4'],
+                        stringArrayIndexShift: true,
+                        stringArrayRotate: true,
+                        stringArrayShuffle: true,
+                        stringArrayWrappersCount: 1,
+                        stringArrayWrappersChainedCalls: true,
+                        stringArrayWrappersParametersMaxCount: 2,
+                        stringArrayWrappersType: 'variable',
+                        stringArrayThreshold: 0.75,
+                        unicodeEscapeSequence: false
+                    });
+
+                    document.getElementById('outputCode').value = obfuscationResult.getObfuscatedCode();
+                    
+                    Swal.close();
+                    togglePage('output');
+                    
+                    // Success toast
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        background: '#0a0a0a',
+                        color: '#fff'
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Code successfully secured'
+                    });
+
+                } catch (error) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: error.message || 'An unexpected error occurred.',
+                        icon: 'error',
+                        background: 'rgba(10, 10, 10, 0.95)',
+                        color: '#fff'
+                    });
+                }
+            }, 500);
         }
+
+        // --- UTILITIES ---
+        function copyOutput() {
+            const output = document.getElementById('outputCode');
+            output.select();
+            document.execCommand('copy');
+            
+            Swal.fire({
+                title: 'Copied!',
+                icon: 'success',
+                background: 'rgba(10, 10, 10, 0.95)',
+                color: '#fff',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+
         function downloadOutput() {
-            const blob = new Blob([outputEditor.getValue()], { type: 'text/javascript' });
+            const output = document.getElementById('outputCode').value;
+            if(!output) return;
+
+            const blob = new Blob([output], { type: 'application/javascript' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
+            
+            // Generate filename with timestamp
+            const date = new Date();
+            const timestamp = `${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
+            
             a.href = url;
-            a.download = 'bedusec_protected_' + Date.now() + '.js';
+            a.download = `obfuscated_${timestamp}.js`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
     </script>
