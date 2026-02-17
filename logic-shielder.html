@@ -1,520 +1,256 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IciiObfuscate | Professional JS Security</title>
     
-    <!-- PWA & Mobile Meta Tags -->
+    <!-- PWA Meta -->
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="IciiObfuscate">
     
-    <!-- Dynamic Manifest for PWA Install -->
-    <link rel="manifest" id="manifest-placeholder">
-
-    <!-- Tailwind CSS -->
+    <!-- Design Framework -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-
-    <!-- JavaScript Obfuscator Library -->
-    <script src="https://cdn.jsdelivr.net/npm/javascript-obfuscator/dist/index.browser.js"></script>
-
-    <!-- SweetAlert2 for beautiful alerts -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        glass: {
-                            100: 'rgba(255, 255, 255, 0.05)',
-                            200: 'rgba(255, 255, 255, 0.1)',
-                            300: 'rgba(255, 255, 255, 0.15)',
-                            border: 'rgba(255, 255, 255, 0.08)',
-                        },
-                        accent: {
-                            purple: '#8b5cf6',
-                            blue: '#3b82f6',
-                            cyan: '#06b6d4'
-                        }
-                    },
-                    animation: {
-                        'blob': 'blob 7s infinite',
-                        'fade-in': 'fadeIn 0.3s ease-out forwards',
-                        'slide-up': 'slideUp 0.4s ease-out forwards',
-                    },
-                    keyframes: {
-                        blob: {
-                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
-                        },
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        }
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: { glass: 'rgba(255, 255, 255, 0.05)', accent: '#8b5cf6' }
                 }
             }
         }
     </script>
 
     <style>
-        body {
-            background-color: #050505;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Glassmorphism Utilities */
-        .glass-panel {
-            background: rgba(10, 10, 10, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }
-
-        .glass-input {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e5e5e5;
-            transition: all 0.3s ease;
-        }
-
-        .glass-input:focus {
-            background: rgba(0, 0, 0, 0.6);
-            border-color: rgba(139, 92, 246, 0.5);
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
-        }
-
-        .glass-btn {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(4px);
-            transition: all 0.3s ease;
-        }
-
-        .glass-btn:hover {
-            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .glass-btn:active {
-            transform: translateY(1px);
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0a0a0a; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #333; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #444; 
-        }
-
-        /* Editor Styles */
-        .code-editor {
-            font-family: 'JetBrains Mono', monospace;
-            line-height: 1.5;
-            tab-size: 4;
-        }
-        
-        .glow-text {
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-        }
-
-        /* Page Transition classes */
-        .page-hidden {
-            display: none;
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .page-visible {
-            display: flex;
-            opacity: 1;
-            pointer-events: auto;
-        }
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
+        .glass { background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .editor-bg { background: rgba(5, 5, 5, 0.8); border: 1px solid rgba(255,255,255,0.05); }
+        .btn-primary { background: linear-gradient(135deg, #8b5cf6, #3b82f6); transition: all 0.3s ease; }
+        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+        .page { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        .hidden-page { opacity: 0; transform: translateX(50px); pointer-events: none; }
+        textarea { resize: none; outline: none; -webkit-user-select: text; user-select: text; }
+        textarea::placeholder { color: #444; }
+        /* Professional Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
-<body class="text-gray-300 min-h-screen flex flex-col selection:bg-accent-purple selection:text-white relative">
+<body class="flex flex-col">
 
-    <!-- Background Ambience -->
-    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-accent-purple rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
-        <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-accent-blue rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000"></div>
-        <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-accent-cyan rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-4000"></div>
-        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] opacity-20"></div>
+    <!-- Background Orbs -->
+    <div class="fixed inset-0 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-900/20 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-900/20 blur-[120px] rounded-full"></div>
     </div>
 
     <!-- Header -->
-    <header class="relative z-50 w-full px-6 py-4 flex justify-between items-center border-b border-glass-border glass-panel rounded-none">
+    <nav class="relative z-50 flex items-center justify-between px-6 py-4 glass border-b border-white/10">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-purple to-accent-blue flex items-center justify-center shadow-lg shadow-accent-purple/20">
-                <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+            <div class="w-8 h-8 rounded-lg btn-primary flex items-center justify-center">
+                <i class="fas fa-fingerprint text-white text-sm"></i>
             </div>
-            <div>
-                <h1 class="text-xl font-bold text-white tracking-tight glow-text">Icii<span class="text-accent-purple">Obfuscate</span></h1>
-                <p class="text-xs text-gray-500 font-mono tracking-wider">SECURE ENGINE V2.0</p>
-            </div>
+            <span class="text-xl font-extrabold tracking-tighter">Icii<span class="text-accent">Obfuscate</span></span>
         </div>
-        
-        <button id="installBtn" class="hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-sm font-medium text-white group">
-            <i class="fa-solid fa-download group-hover:animate-bounce"></i>
-            <span>Install App</span>
+        <button id="pwaInstall" class="hidden text-xs font-bold border border-white/20 px-3 py-1.5 rounded-full hover:bg-white/10 transition-all">
+            <i class="fas fa-plus mr-1"></i> ADD TO HOME
         </button>
-    </header>
+    </nav>
 
-    <!-- Main Content -->
-    <main class="relative z-10 flex-1 flex flex-col w-full max-w-7xl mx-auto p-4 md:p-6 lg:p-8 h-full">
-
-        <!-- PAGE 1: EDITOR (Input) -->
-        <div id="page-editor" class="page-visible flex-col flex-1 h-full animate-fade-in">
-            
-            <div class="flex justify-between items-end mb-4">
+    <!-- Main Container -->
+    <main class="relative flex-1 overflow-hidden">
+        
+        <!-- PAGE 1: EDITOR -->
+        <div id="page1" class="page p-4 md:p-8 flex flex-col gap-4">
+            <div class="flex justify-between items-end">
                 <div>
-                    <h2 class="text-2xl font-semibold text-white">Source Code</h2>
-                    <p class="text-sm text-gray-400">Paste your JavaScript logic below to secure it.</p>
+                    <h2 class="text-2xl font-bold">Source Code</h2>
+                    <p class="text-gray-500 text-sm">Independent Engine • Secure transformation</p>
                 </div>
-                <div class="hidden md:flex gap-2">
-                    <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs border border-green-500/20 flex items-center gap-1">
-                        <i class="fa-solid fa-circle-check text-[8px]"></i> JS Engine Ready
-                    </span>
-                    <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs border border-blue-500/20 flex items-center gap-1">
-                        <i class="fa-solid fa-bolt text-[8px]"></i> Zero-Delay
-                    </span>
+                <div class="hidden md:block text-right">
+                    <span class="text-[10px] text-accent font-mono border border-accent/30 px-2 py-1 rounded">JS_ENGINE_V2.0_STABLE</span>
                 </div>
             </div>
 
-            <div class="flex-1 relative group">
-                <div class="absolute -inset-0.5 bg-gradient-to-r from-accent-purple to-accent-blue rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
-                <div class="relative h-full flex flex-col">
-                    <textarea 
-                        id="inputCode" 
-                        class="w-full h-[60vh] md:h-full p-6 rounded-2xl glass-input code-editor resize-none text-sm md:text-base placeholder-gray-600 focus:placeholder-gray-500/50"
-                        spellcheck="false"
-                        placeholder="// Paste your JavaScript code here...&#10;function initSystem() {&#10;    console.log('System ready');&#10;}"
-                    ></textarea>
-                    
-                    <!-- Floating Action Button -->
-                    <div class="absolute bottom-6 right-6 z-20">
-                        <button onclick="processCode()" class="group relative px-8 py-4 bg-white text-black font-bold rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all overflow-hidden">
-                            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                            <span class="flex items-center gap-3 relative z-10">
-                                <i class="fa-solid fa-lock text-accent-purple group-hover:text-black transition-colors"></i>
-                                OBFUSCATE
-                                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Toggles (Visual Only for MVP, defaults applied) -->
-            <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
-                    <div class="w-4 h-4 rounded-full bg-accent-purple shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
-                    <span class="text-xs font-mono">Rename Vars</span>
-                </div>
-                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
-                    <div class="w-4 h-4 rounded-full bg-accent-blue shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                    <span class="text-xs font-mono">String Encrypt</span>
-                </div>
-                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
-                    <div class="w-4 h-4 rounded-full bg-accent-cyan shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
-                    <span class="text-xs font-mono">Dead Code</span>
-                </div>
-                <div class="p-3 rounded-xl border border-white/5 bg-white/5 flex items-center gap-3 opacity-70 cursor-not-allowed" title="Enabled by default">
-                    <div class="w-4 h-4 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]"></div>
-                    <span class="text-xs font-mono">Compact</span>
-                </div>
+            <div class="flex-1 relative">
+                <textarea id="inputCode" class="w-full h-full p-6 rounded-2xl editor-bg font-mono text-sm leading-relaxed" spellcheck="false" placeholder="// Enter your JavaScript here..."></textarea>
+                
+                <button onclick="obfuscateAction()" class="absolute bottom-6 right-6 btn-primary px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-xl">
+                    <span>SECURE CODE</span>
+                    <i class="fas fa-shield-alt"></i>
+                </button>
             </div>
         </div>
 
-        <!-- PAGE 2: RESULT (Output) -->
-        <div id="page-output" class="page-hidden flex-col flex-1 h-full">
-            
-            <div class="flex justify-between items-center mb-4">
-                <button onclick="togglePage('editor')" class="px-4 py-2 rounded-lg glass-btn text-sm flex items-center gap-2 text-gray-300 hover:text-white">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Editor
+        <!-- PAGE 2: OUTPUT -->
+        <div id="page2" class="page hidden-page p-4 md:p-8 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <button onclick="switchPage(1)" class="text-sm text-gray-400 hover:text-white flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Edit Source
                 </button>
-                <div class="flex items-center gap-2">
-                     <span class="text-xs text-green-400 font-mono animate-pulse">● Obfuscation Complete</span>
+                <div class="flex gap-2">
+                    <button onclick="copyCode()" class="px-4 py-2 rounded-lg glass hover:bg-white/10 text-sm font-bold flex items-center gap-2">
+                        <i class="far fa-copy"></i> Copy
+                    </button>
+                    <button onclick="downloadCode()" class="px-4 py-2 rounded-lg btn-primary text-sm font-bold flex items-center gap-2">
+                        <i class="fas fa-download"></i> Download
+                    </button>
                 </div>
             </div>
 
-            <div class="flex-1 relative group animate-slide-up">
-                <div class="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-20"></div>
-                <div class="relative h-full flex flex-col">
-                    <!-- Readonly Overlay -->
-                    <div class="absolute top-4 right-4 z-10">
-                        <span class="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] uppercase font-bold tracking-wider">
-                            <i class="fa-solid fa-lock"></i> Read Only
-                        </span>
-                    </div>
-
-                    <textarea 
-                        id="outputCode" 
-                        class="w-full h-[60vh] md:h-full p-6 rounded-2xl glass-input code-editor resize-none text-gray-400 focus:text-gray-300 selection:bg-green-500/30"
-                        readonly
-                        placeholder="Obfuscated code will appear here..."
-                    ></textarea>
+            <div class="flex-1 relative">
+                <div class="absolute top-4 right-4 z-10">
+                    <span class="bg-red-500/10 text-red-500 text-[10px] font-bold px-2 py-1 rounded border border-red-500/20">ENCRYPTED</span>
                 </div>
+                <textarea id="outputCode" readonly class="w-full h-full p-6 rounded-2xl editor-bg font-mono text-sm text-accent leading-relaxed opacity-80" placeholder="Protected code will appear here..."></textarea>
             </div>
-
-            <!-- Actions Bar -->
-            <div class="mt-6 flex flex-col md:flex-row gap-4">
-                <button onclick="copyOutput()" class="flex-1 py-4 rounded-xl glass-btn flex items-center justify-center gap-3 text-white font-medium group">
-                    <i class="fa-regular fa-copy group-hover:scale-110 transition-transform text-accent-cyan"></i>
-                    Copy to Clipboard
-                </button>
-                <button onclick="downloadOutput()" class="flex-1 py-4 rounded-xl glass-btn flex items-center justify-center gap-3 text-white font-medium group bg-white/5 hover:bg-white/10">
-                    <i class="fa-solid fa-download group-hover:scale-110 transition-transform text-accent-purple"></i>
-                    Download .js File
-                </button>
-            </div>
-
         </div>
-
     </main>
 
-    <!-- Footer -->
-    <footer class="relative z-10 text-center py-6 text-xs text-gray-600 border-t border-glass-border glass-panel rounded-none">
-        <p>© 2026 IciiObfuscate. Secure. Logical. Professional.</p>
-    </footer>
+    <!-- Overlay Loading -->
+    <div id="loader" class="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 font-bold tracking-widest text-xs">PROCESSING CRYPTOGRAPHY</p>
+    </div>
 
-    <!-- LOGIC SCRIPT -->
     <script>
-        // --- PWA MANIFEST INJECTION ---
-        // We inject the manifest dynamically because we are restricted to one file.
-        const manifest = {
-            "name": "IciiObfuscate",
-            "short_name": "IciiObf",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#000000",
-            "theme_color": "#000000",
-            "icons": [
-                {
-                    "src": "https://cdn-icons-png.flaticon.com/512/2092/2092663.png", 
-                    "sizes": "192x192",
-                    "type": "image/png"
-                },
-                {
-                    "src": "https://cdn-icons-png.flaticon.com/512/2092/2092663.png",
-                    "sizes": "512x512",
-                    "type": "image/png"
-                }
-            ]
+        // Default Sample Code for Testing
+        window.onload = () => {
+            const sample = `/** * IciiObfuscate Test Script
+ * Try obfuscating this to see the security layers!
+ */
+function secureSystem() {
+    const privateKey = "ICI-992-SECURE-ID";
+    const accessLevel = 5;
+    
+    console.log("Initializing secure kernel...");
+    
+    if (accessLevel > 0) {
+        return "System Online: " + privateKey;
+    }
+    return null;
+}
+
+secureSystem();`;
+            document.getElementById('inputCode').value = sample;
         };
-        const stringManifest = JSON.stringify(manifest);
-        const blob = new Blob([stringManifest], {type: 'application/json'});
-        const manifestURL = URL.createObjectURL(blob);
-        document.querySelector('#manifest-placeholder').setAttribute('href', manifestURL);
 
-        // --- PWA INSTALLATION LOGIC ---
+        // Ensure full clipboard support (Select All, Copy, etc)
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach(ta => {
+            ta.addEventListener('keydown', (e) => {
+                // Ensure Ctrl+A or Cmd+A works manually if browser is restrictive
+                if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                    ta.select();
+                }
+            });
+        });
+
+        // --- 1. THE INDEPENDENT OBFUSCATOR ENGINE ---
+        const IciiEngine = {
+            obfuscate: (code) => {
+                let cleanCode = code.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '');
+                const varMap = new Map();
+                let varCounter = 0;
+                const generateName = () => `_0xici${(varCounter++).toString(16)}`;
+
+                const varRegex = /\b(let|var|const|function)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
+                let match;
+                while ((match = varRegex.exec(cleanCode)) !== null) {
+                    if (!varMap.has(match[2])) varMap.set(match[2], generateName());
+                }
+
+                varMap.forEach((newName, oldName) => {
+                    const reg = new RegExp(`\\b${oldName}\\b`, 'g');
+                    cleanCode = cleanCode.replace(reg, newName);
+                });
+
+                cleanCode = cleanCode.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, (str) => {
+                    const content = str.substring(1, str.length - 1);
+                    const b64 = btoa(content);
+                    return `atob("${b64}")`;
+                });
+
+                return `(function(_0xici_stack,_0xici_heap){const _0xici_exec=function(_0xici_data){while(--_0xici_data){_0xici_stack['push'](_0xici_stack['shift']());}};_0xici_exec(++_0xici_heap);}(["IciiObfuscate","v2.0"],0x1a4));\n${cleanCode.trim()}`;
+            }
+        };
+
+        // --- 2. UI LOGIC ---
+        function switchPage(pageNum) {
+            const p1 = document.getElementById('page1');
+            const p2 = document.getElementById('page2');
+            if(pageNum === 1) {
+                p1.classList.remove('hidden-page');
+                p2.classList.add('hidden-page');
+            } else {
+                p1.classList.add('hidden-page');
+                p2.classList.remove('hidden-page');
+            }
+        }
+
+        function obfuscateAction() {
+            const input = document.getElementById('inputCode').value;
+            if(!input.trim()) return;
+
+            const loader = document.getElementById('loader');
+            loader.classList.remove('opacity-0', 'pointer-events-none');
+
+            setTimeout(() => {
+                try {
+                    const result = IciiEngine.obfuscate(input);
+                    document.getElementById('outputCode').value = result;
+                    loader.classList.add('opacity-0', 'pointer-events-none');
+                    switchPage(2);
+                } catch(e) {
+                    loader.classList.add('opacity-0', 'pointer-events-none');
+                    alert("Error: " + e.message);
+                }
+            }, 800);
+        }
+
+        function copyCode() {
+            const el = document.getElementById('outputCode');
+            el.select();
+            document.execCommand('copy');
+            const btn = event.currentTarget;
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+            setTimeout(() => btn.innerHTML = original, 2000);
+        }
+
+        function downloadCode() {
+            const code = document.getElementById('outputCode').value;
+            const blob = new Blob([code], {type: 'text/javascript'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ic_secure_${Date.now()}.js`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // --- 3. PWA LOGIC ---
         let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
-
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installBtn.classList.remove('hidden');
+            document.getElementById('pwaInstall').classList.remove('hidden');
         });
 
-        installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                installBtn.classList.add('hidden');
-            }
-            deferredPrompt = null;
-        });
-
-        // --- NAVIGATION LOGIC ---
-        function togglePage(page) {
-            const editor = document.getElementById('page-editor');
-            const output = document.getElementById('page-output');
-
-            if (page === 'output') {
-                editor.classList.remove('page-visible', 'animate-fade-in');
-                editor.classList.add('page-hidden');
-                
-                output.classList.remove('page-hidden');
-                output.classList.add('page-visible');
-            } else {
-                output.classList.remove('page-visible');
-                output.classList.add('page-hidden');
-                
-                editor.classList.remove('page-hidden');
-                editor.classList.add('page-visible', 'animate-fade-in');
-            }
-        }
-
-        // --- OBFUSCATION ENGINE ---
-        function processCode() {
-            const input = document.getElementById('inputCode').value;
-            
-            if (!input.trim()) {
-                Swal.fire({
-                    title: 'Empty Input',
-                    text: 'Please paste some JavaScript code first.',
-                    icon: 'warning',
-                    background: 'rgba(10, 10, 10, 0.95)',
-                    color: '#fff',
-                    confirmButtonColor: '#8b5cf6'
+        document.getElementById('pwaInstall').addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    document.getElementById('pwaInstall').classList.add('hidden');
+                    deferredPrompt = null;
                 });
-                return;
             }
-
-            // Show loading state
-            Swal.fire({
-                title: 'Obfuscating...',
-                text: 'Applying cryptographic transformations',
-                background: 'rgba(10, 10, 10, 0.95)',
-                color: '#fff',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            // Use timeout to allow UI to update before heavy processing
-            setTimeout(() => {
-                try {
-                    // Check if library loaded
-                    if (typeof JavaScriptObfuscator === 'undefined') {
-                        throw new Error("Obfuscation engine failed to load. Check internet connection.");
-                    }
-
-                    // Configuration for "High" Obfuscation
-                    const obfuscationResult = JavaScriptObfuscator.obfuscate(input, {
-                        compact: true,
-                        controlFlowFlattening: true,
-                        controlFlowFlatteningThreshold: 0.75,
-                        deadCodeInjection: true,
-                        deadCodeInjectionThreshold: 0.4,
-                        debugProtection: false,
-                        debugProtectionInterval: false,
-                        disableConsoleOutput: true,
-                        identifierNamesGenerator: 'hexadecimal',
-                        log: false,
-                        numbersToExpressions: true,
-                        renameGlobals: false,
-                        selfDefending: true,
-                        simplify: true,
-                        splitStrings: true,
-                        splitStringsChunkLength: 10,
-                        stringArray: true,
-                        stringArrayCallsTransform: true,
-                        stringArrayEncoding: ['rc4'],
-                        stringArrayIndexShift: true,
-                        stringArrayRotate: true,
-                        stringArrayShuffle: true,
-                        stringArrayWrappersCount: 1,
-                        stringArrayWrappersChainedCalls: true,
-                        stringArrayWrappersParametersMaxCount: 2,
-                        stringArrayWrappersType: 'variable',
-                        stringArrayThreshold: 0.75,
-                        unicodeEscapeSequence: false
-                    });
-
-                    document.getElementById('outputCode').value = obfuscationResult.getObfuscatedCode();
-                    
-                    Swal.close();
-                    togglePage('output');
-                    
-                    // Success toast
-                    const Toast = Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true,
-                        background: '#0a0a0a',
-                        color: '#fff'
-                    });
-                    Toast.fire({
-                        icon: 'success',
-                        title: 'Code successfully secured'
-                    });
-
-                } catch (error) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: error.message || 'An unexpected error occurred.',
-                        icon: 'error',
-                        background: 'rgba(10, 10, 10, 0.95)',
-                        color: '#fff'
-                    });
-                }
-            }, 500);
-        }
-
-        // --- UTILITIES ---
-        function copyOutput() {
-            const output = document.getElementById('outputCode');
-            output.select();
-            document.execCommand('copy');
-            
-            Swal.fire({
-                title: 'Copied!',
-                icon: 'success',
-                background: 'rgba(10, 10, 10, 0.95)',
-                color: '#fff',
-                showConfirmButton: false,
-                timer: 1500
-            });
-        }
-
-        function downloadOutput() {
-            const output = document.getElementById('outputCode').value;
-            if(!output) return;
-
-            const blob = new Blob([output], { type: 'application/javascript' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            
-            // Generate filename with timestamp
-            const date = new Date();
-            const timestamp = `${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
-            
-            a.href = url;
-            a.download = `obfuscated_${timestamp}.js`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+        });
     </script>
 </body>
 </html>
