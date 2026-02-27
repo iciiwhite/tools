@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://bedusec.github.io/sitemap.xml
