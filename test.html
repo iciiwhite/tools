@@ -1,1 +1,612 @@
-hellp
+hellppackage fmanager.icii;
+
+import android.app.Dialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.v4.content.FileProvider;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class ActivityTxtFile extends BaseDrawerActivity {
+
+    private String repo, path, filename, branch;
+    private TextView fileNameView;
+    private WebView webView;
+    private ProgressBar progress;
+    private ImageButton undoBtn, redoBtn, deleteSelBtn, downloadBtn, saveBtn;
+    private GitHubDB db;
+    private String originalContent = "";
+    private File localFile;
+    private boolean isContentChanged = false;
+
+    private static final int ACTION_NONE = 0;
+    private static final int ACTION_SAVE = 1;
+    private static final int ACTION_BACK = 2;
+    private int pendingAction = ACTION_NONE;
+
+    private class ContentGetter {
+        @JavascriptInterface
+        public void onContent(final String content) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (pendingAction == ACTION_SAVE) {
+                        new SaveToGitHubTask().execute(content);
+                    } else if (pendingAction == ACTION_BACK) {
+                        if (!content.equals(originalContent)) {
+                            showExitConfirmDialog();
+                        } else {
+                            finish();
+                        }
+                    } else {
+                        new SaveLocalTask().execute(content);
+                    }
+                    pendingAction = ACTION_NONE;
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_txt_file);
+        setupDrawer();
+        setupDrawerButton();
+
+        repo = getIntent().getStringExtra("repo");
+        path = getIntent().getStringExtra("path");
+        filename = getIntent().getStringExtra("filename");
+        branch = getIntent().getStringExtra("branch");
+        if (branch == null) branch = "master";
+
+        SharedPreferences prefs = getSharedPreferences("github", 0);
+        String pat = prefs.getString("pat", "");
+        db = GitHubDB.get(this, pat);
+
+        fileNameView = (TextView) findViewById(R.id.file_name);
+        webView = (WebView) findViewById(R.id.webview);
+        progress = (ProgressBar) findViewById(R.id.progress);
+        undoBtn = (ImageButton) findViewById(R.id.btn_undo);
+        redoBtn = (ImageButton) findViewById(R.id.btn_redo);
+        deleteSelBtn = (ImageButton) findViewById(R.id.btn_delete_selection);
+        downloadBtn = (ImageButton) findViewById(R.id.btn_download);
+        saveBtn = (ImageButton) findViewById(R.id.btn_save);
+
+        String displayName = filename;
+        if (displayName.length() > 15) {
+            displayName = displayName.substring(0, 12) + "...";
+        }
+        fileNameView.setText(displayName);
+
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setDomStorageEnabled(true);
+
+        webView.addJavascriptInterface(new ContentGetter(), "contentGetter");
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                new LoadContentTask().execute();
+            }
+        });
+        webView.loadUrl("file:///android_asset/editor.html");
+
+        undoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                webView.loadUrl("javascript:undo()");
+            }
+        });
+        redoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                webView.loadUrl("javascript:redo()");
+            }
+        });
+        deleteSelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                webView.loadUrl("javascript:deleteSelected()");
+            }
+        });
+        downloadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pendingAction = ACTION_NONE;
+                webView.loadUrl("javascript:getContentAndSend()");
+            }
+        });
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pendingAction = ACTION_SAVE;
+                webView.loadUrl("javascript:getContentAndSend()");
+            }
+        });
+    }
+
+    private class LoadContentTask extends AsyncTask<Void, Void, String> {
+        @Override
+        protected void onPreExecute() {
+            progress.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            return db.getFileContent(repo, path);
+        }
+
+        @Override
+        protected void onPostExecute(String content) {
+            progress.setVisibility(View.GONE);
+            if (content != null && !content.startsWith("Error:")) {
+                originalContent = content;
+                String escaped = content.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r");
+                webView.loadUrl("javascript:setContent('" + escaped + "')");
+                String ext = "";
+                int dot = filename.lastIndexOf('.');
+                if (dot > 0) ext = filename.substring(dot + 1).toLowerCase();
+                webView.loadUrl("javascript:setMode('" + getAceMode(ext) + "')");
+            } else {
+                Toast.makeText(ActivityTxtFile.this, "Load error: " + content, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private String getAceMode(String ext) {
+        if (ext.equals("java")) return "java";
+        if (ext.equals("xml") || ext.equals("html") || ext.equals("htm")) return "html";
+        if (ext.equals("json")) return "json";
+        if (ext.equals("js")) return "javascript";
+        if (ext.equals("css")) return "css";
+        if (ext.equals("md")) return "markdown";
+        if (ext.equals("py")) return "python";
+        if (ext.equals("cpp") || ext.equals("c") || ext.equals("h")) return "c_cpp";
+        if (ext.equals("php")) return "php";
+        if (ext.equals("sql")) return "sql";
+        return "text";
+    }
+
+    private class SaveLocalTask extends AsyncTask<String, Void, Boolean> {
+        private String error;
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            try {
+                File folder = FileUtils.getDownloadFolder();
+                localFile = new File(folder, filename);
+                FileOutputStream out = new FileOutputStream(localFile);
+                out.write(params[0].getBytes("UTF-8"));
+                out.close();
+                return true;
+            } catch (Exception e) {
+                error = e.getMessage();
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success) {
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Download Complete", "Saved to " + localFile.getAbsolutePath(),
+                        new Intent(ActivityTxtFile.this, ActivityTxtFile.class));
+            } else {
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Download Failed", "Error: " + error,
+                        new Intent(ActivityTxtFile.this, ActivityTxtFile.class));
+            }
+        }
+    }
+
+    private class SaveToGitHubTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected void onPreExecute() {
+            progress.setVisibility(View.VISIBLE);
+            saveBtn.setEnabled(false);
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            return db.updateFile(repo, path, params[0], "Updated via editor");
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            progress.setVisibility(View.GONE);
+            saveBtn.setEnabled(true);
+            if (result == null) {
+                originalContent = webView.getOriginalUrl(); // dummy, but we assume success
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Save Successful", "File saved to GitHub",
+                        new Intent(ActivityTxtFile.this, ActivityTxtFile.class));
+            } else {
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Save Failed", "Error: " + result,
+                        new Intent(ActivityTxtFile.this, ActivityTxtFile.class));
+            }
+        }
+    }
+
+    private void showOptionsDialog() {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_options);
+        dialog.setCancelable(true);
+
+        ListView listView = (ListView) dialog.findViewById(R.id.options_list);
+        final String[] options = {"Share", "Rename", "Delete"};
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.menu_option, options) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                if (convertView == null) {
+                    convertView = getLayoutInflater().inflate(R.layout.menu_option, parent, false);
+                }
+                ((TextView) convertView).setText(options[position]);
+                return convertView;
+            }
+        };
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                dialog.dismiss();
+                switch (position) {
+                    case 0:
+                        shareFile();
+                        break;
+                    case 1:
+                        showRenameDialog();
+                        break;
+                    case 2:
+                        showDeleteConfirmation();
+                        break;
+                }
+            }
+        });
+        dialog.show();
+    }
+
+    private void shareFile() {
+        if (localFile != null && localFile.exists()) {
+            performShare();
+        } else {
+            Toast.makeText(this, "Please download first", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void performShare() {
+        if (localFile == null || !localFile.exists()) {
+            Toast.makeText(this, "File not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Uri uri;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", localFile);
+        } else {
+            uri = Uri.fromFile(localFile);
+        }
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("text/plain");
+        share.putExtra(Intent.EXTRA_STREAM, uri);
+        share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(Intent.createChooser(share, "Share File"));
+    }
+
+    private void showRenameDialog() {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_rename);
+        dialog.setCancelable(true);
+
+        final EditText input = (EditText) dialog.findViewById(R.id.rename_input);
+        input.setText(filename);
+
+        Button cancel = (Button) dialog.findViewById(R.id.dialog_cancel);
+        Button ok = (Button) dialog.findViewById(R.id.dialog_ok);
+
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String newName = input.getText().toString().trim();
+                if (newName.length() > 0 && !newName.equals(filename)) {
+                    new RenameTask().execute(newName);
+                }
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+    }
+
+    private class RenameTask extends AsyncTask<String, Void, String> {
+        private String newName;
+
+        @Override
+        protected void onPreExecute() {
+            progress.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            newName = params[0];
+            try {
+                String shaUrl = "https://api.github.com/repos/" + repo + "/contents/" + path;
+                HttpURLConnection conn = (HttpURLConnection) new URL(shaUrl).openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Authorization", "token " + db.pat);
+                conn.setRequestProperty("User-Agent", "GitHubFileManager/1.0");
+
+                if (conn.getResponseCode() != 200) {
+                    return "Failed to get file info";
+                }
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                JSONObject obj = new JSONObject(response.toString());
+                String sha = obj.getString("sha");
+                String content = obj.getString("content");
+
+                String newPath = path.substring(0, path.lastIndexOf('/') + 1) + newName;
+                String createUrl = "https://api.github.com/repos/" + repo + "/contents/" + newPath;
+                HttpURLConnection createConn = (HttpURLConnection) new URL(createUrl).openConnection();
+                createConn.setRequestMethod("PUT");
+                createConn.setRequestProperty("Authorization", "token " + db.pat);
+                createConn.setRequestProperty("User-Agent", "GitHubFileManager/1.0");
+                createConn.setRequestProperty("Content-Type", "application/json");
+                createConn.setDoOutput(true);
+
+                JSONObject createBody = new JSONObject();
+                createBody.put("message", "Rename " + filename + " to " + newName);
+                createBody.put("content", content);
+                createBody.put("branch", branch);
+
+                OutputStream os = createConn.getOutputStream();
+                os.write(createBody.toString().getBytes("UTF-8"));
+                os.close();
+
+                int createResponse = createConn.getResponseCode();
+                if (createResponse != 201 && createResponse != 200) {
+                    return "Failed to create new file";
+                }
+
+                String deleteUrl = "https://api.github.com/repos/" + repo + "/contents/" + path;
+                HttpURLConnection deleteConn = (HttpURLConnection) new URL(deleteUrl).openConnection();
+                deleteConn.setRequestMethod("DELETE");
+                deleteConn.setRequestProperty("Authorization", "token " + db.pat);
+                deleteConn.setRequestProperty("User-Agent", "GitHubFileManager/1.0");
+                deleteConn.setRequestProperty("Content-Type", "application/json");
+                deleteConn.setDoOutput(true);
+
+                JSONObject deleteBody = new JSONObject();
+                deleteBody.put("message", "Delete old " + filename);
+                deleteBody.put("sha", sha);
+                deleteBody.put("branch", branch);
+
+                os = deleteConn.getOutputStream();
+                os.write(deleteBody.toString().getBytes("UTF-8"));
+                os.close();
+
+                int deleteResponse = deleteConn.getResponseCode();
+                if (deleteResponse != 200) {
+                    return "Failed to delete old file";
+                }
+
+                return null; // success
+            } catch (Exception e) {
+                return e.getMessage();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            progress.setVisibility(View.GONE);
+            if (result == null) {
+                filename = newName;
+                path = path.substring(0, path.lastIndexOf('/') + 1) + newName;
+                String display = filename;
+                if (display.length() > 15) {
+                    display = display.substring(0, 12) + "...";
+                }
+                fileNameView.setText(display);
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Rename Successful", "File renamed to " + newName,
+                        new Intent(ActivityTxtFile.this, ActivityTxtFile.class));
+            } else {
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Rename Failed", "Error: " + result,
+                        new Intent(ActivityTxtFile.this, ActivityTxtFile.class));
+            }
+        }
+    }
+
+    private void showDeleteConfirmation() {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.confirm_delete);
+        dialog.setCancelable(true);
+
+        TextView message = (TextView) dialog.findViewById(R.id.confirm_message);
+        message.setText("Delete " + filename + "?");
+
+        Button cancel = (Button) dialog.findViewById(R.id.dialog_cancel);
+        Button confirm = (Button) dialog.findViewById(R.id.dialog_confirm);
+
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        confirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                new DeleteTask().execute();
+            }
+        });
+
+        dialog.show();
+    }
+
+    private class DeleteTask extends AsyncTask<Void, Void, String> {
+        @Override
+        protected void onPreExecute() {
+            progress.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            try {
+                String shaUrl = "https://api.github.com/repos/" + repo + "/contents/" + path;
+                HttpURLConnection conn = (HttpURLConnection) new URL(shaUrl).openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Authorization", "token " + db.pat);
+                conn.setRequestProperty("User-Agent", "GitHubFileManager/1.0");
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode != 200) {
+                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                    StringBuilder errorResponse = new StringBuilder();
+                    String line;
+                    while ((line = errorReader.readLine()) != null) {
+                        errorResponse.append(line);
+                    }
+                    errorReader.close();
+                    return "Failed to get file info: " + errorResponse.toString();
+                }
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                JSONObject obj = new JSONObject(response.toString());
+                String sha = obj.getString("sha");
+
+                String deleteUrl = "https://api.github.com/repos/" + repo + "/contents/" + path;
+                HttpURLConnection deleteConn = (HttpURLConnection) new URL(deleteUrl).openConnection();
+                deleteConn.setRequestMethod("DELETE");
+                deleteConn.setRequestProperty("Authorization", "token " + db.pat);
+                deleteConn.setRequestProperty("User-Agent", "GitHubFileManager/1.0");
+                deleteConn.setRequestProperty("Content-Type", "application/json");
+                deleteConn.setDoOutput(true);
+
+                JSONObject deleteBody = new JSONObject();
+                deleteBody.put("message", "Delete " + filename);
+                deleteBody.put("sha", sha);
+                deleteBody.put("branch", branch);
+
+                OutputStream os = deleteConn.getOutputStream();
+                os.write(deleteBody.toString().getBytes("UTF-8"));
+                os.close();
+
+                int deleteResponse = deleteConn.getResponseCode();
+                if (deleteResponse != 200) {
+                    BufferedReader deleteErrorReader = new BufferedReader(new InputStreamReader(deleteConn.getErrorStream()));
+                    StringBuilder deleteError = new StringBuilder();
+                    while ((line = deleteErrorReader.readLine()) != null) {
+                        deleteError.append(line);
+                    }
+                    deleteErrorReader.close();
+                    return "Failed to delete file: " + deleteError.toString();
+                }
+                return null; // success
+            } catch (Exception e) {
+                return e.getMessage();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            progress.setVisibility(View.GONE);
+            if (result == null) {
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Delete Successful", "File deleted",
+                        new Intent(ActivityTxtFile.this, MainActivity.class));
+                finish();
+            } else {
+                NotificationHelper.showNotification(ActivityTxtFile.this,
+                        "Delete Failed", "Error: " + result,
+                        new Intent(ActivityTxtFile.this, ActivityTxtFile.class));
+            }
+        }
+    }
+
+    private void showExitConfirmDialog() {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.confirm_exit);
+        dialog.setCancelable(true);
+
+        Button cancel = (Button) dialog.findViewById(R.id.dialog_cancel);
+        Button confirm = (Button) dialog.findViewById(R.id.dialog_confirm);
+
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        confirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                finish();
+            }
+        });
+
+        dialog.show();
+    }
+
+    @Override
+    public void onBackPressed() {
+        pendingAction = ACTION_BACK;
+        webView.loadUrl("javascript:getContentAndSend()");
+    }
+}
